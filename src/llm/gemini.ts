@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import fs from 'fs';
+import path from 'path';
 
 export class GeminiClient {
   private genAI: GoogleGenerativeAI;
@@ -11,6 +13,22 @@ export class GeminiClient {
   }
 
   async generateSuggestions(diff: string, currentContext: string): Promise<any> {
+
+    // Load Template if it exists
+    let adrTemplate = "";
+    try {
+      const templatePath = path.resolve(process.cwd(), ".kontext/templates/decision.md");
+      if (fs.existsSync(templatePath)) {
+        adrTemplate = fs.readFileSync(templatePath, "utf-8");
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const templateInstruction = adrTemplate
+      ? `\nIMPORTANT: You MUST follow this exact markdown template for the ADR:\n${adrTemplate}\nReplace {id} with the next available ID (e.g. adr-001) and other placeholders with content.`
+      : `\nDraft a new ADR (markdown with frontmatter).`;
+
     const prompt = `
     You are a Senior Technical Architect reviewing a code change.
     Your goal is to maintain the "Architectural Decision Records" (ADRs) and "Architecture Map" for this project.
@@ -23,7 +41,7 @@ export class GeminiClient {
     1. Identify if this change represents a SIGNIFICANT architectural decision (e.g., adding a library, changing a pattern, new data model).
     2. If NO significant decision: return { "hasDecision": false }.
     3. If YES:
-       - Draft a new ADR (markdown with frontmatter).
+       - ${templateInstruction}
        - OR suggest an update to architecture.md.
        - Return valid JSON.
 

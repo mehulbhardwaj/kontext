@@ -47,45 +47,19 @@ export const registerSync = (program: Command) => {
 };
 
 async function gatherContext(kontextDir: string): Promise<string> {
-    let summary = "## Project Context (Managed by Kontext)\n";
+    // Minimal Bridge Strategy:
+    // Don't dump the whole context. Just point the AI to the source of truth.
+    return `## Kontext State Active
+This project uses Kontext State for architectural decisions.
 
-    // Read Architecture
-    const archFile = path.join(kontextDir, 'architecture.md');
-    if (fs.existsSync(archFile)) {
-        const archContent = await fs.readFile(archFile, 'utf-8');
-        // Simple extraction: take content after first header or YAML
-        summary += `\n### Architecture\n${cleanMarkdown(archContent)}\n`;
-    }
+- **Truth Source**: Read \`.kontext/index.md\` and following links.
+- **Constraints**: Check \`.kontext/constraints.md\` before coding.
+- **Decision History**: See \`.kontext/decisions/\` for ADRs.
 
-    // Read Constraints
-    const constraintsFile = path.join(kontextDir, 'constraints.md');
-    if (fs.existsSync(constraintsFile)) {
-        const constraintsContent = await fs.readFile(constraintsFile, 'utf-8');
-        summary += `\n### Constraints\n${cleanMarkdown(constraintsContent)}\n`;
-    }
-
-    // Read active decisions (Active/Accepted only) - naive limit for now
-    const decisionsDir = path.join(kontextDir, 'decisions');
-    if (fs.existsSync(decisionsDir)) {
-        const files = await fs.readdir(decisionsDir);
-        const activeDecisions = [];
-        for (const f of files) {
-            if (f.endsWith('.md')) {
-                const content = await fs.readFile(path.join(decisionsDir, f), 'utf-8');
-                if (content.includes('status: accepted')) {
-                    // Extract title
-                    const lines = content.split('\n');
-                    const title = lines.find(l => l.startsWith('# ')) || f;
-                    activeDecisions.push(`- [${f}] ${title.replace('# ', '')}`);
-                }
-            }
-        }
-        if (activeDecisions.length > 0) {
-            summary += `\n### Accepted Decisions\n${activeDecisions.slice(0, 5).join('\n')}\n(See .kontext/decisions for full history)\n`;
-        }
-    }
-
-    return summary;
+🤖 **Agent Instructions**:
+1. If you make a significant architectural choice, ask the user to run \`kontext suggest\`.
+2. Do not invent patterns that conflict with \`.kontext/architecture.md\`.
+`;
 }
 
 function cleanMarkdown(content: string): string {
