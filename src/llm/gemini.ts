@@ -13,6 +13,49 @@ export class GeminiClient {
   }
 
 
+  async distillContext(fileContents: { path: string, content: string }[]): Promise<any> {
+    const prompt = `
+    You are the Chief Historian of a software project.
+    Your goal is to REDUCE "Context Entropy" by merging duplicate or highly overlapping Architectural Decision Records (ADRs).
+    
+    Safety Rules:
+    1. NEVER lose a constraint (e.g. "Use Redis").
+    2. NEVER lose a decided timestamp or status.
+    3. If two ADRs conflict, do NOT merge them. Flag them as CONFLICT.
+    4. If ADRs are distinct and valid, Suggest NO CHANGE.
+
+    Input Files:
+    ${JSON.stringify(fileContents, null, 2)}
+
+    Action:
+    Identify a set of files that can be MERGED into a single Canonical ADR.
+    If no obvious merges exist, return { "hasMerge": false }.
+
+    Format:
+    {
+        "hasMerge": boolean,
+        "rationale": "Why these files should be merged.",
+        "filesToDelete": ["path/to/duplicate1.md", "path/to/duplicate2.md"],
+        "mergedFile": {
+            "path": "path/to/canonical_adr.md",
+            "content": "The full markdown content of the merged ADR..."
+        }
+    }
+    
+    Respond ONLY with the JSON.
+    `;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+      return JSON.parse(text);
+    } catch (error) {
+      console.error("Error distilling content:", error);
+      return { hasMerge: false, error: "Failed to distill." };
+    }
+  }
+
   async restructureContent(content: string, template: string, type: 'decision' | 'architecture'): Promise<string> {
     const prompt = `
       You are a Strict Documentation Librarian.
