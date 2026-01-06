@@ -12,6 +12,36 @@ export class GeminiClient {
     // Use gemini-pro for better reasoning on code
   }
 
+
+  async restructureContent(content: string, template: string, type: 'decision' | 'architecture'): Promise<string> {
+    const prompt = `
+      You are a Strict Documentation Librarian.
+      Your goal is to REWRITE the provided content so that it EXACTLY matches the provided Markdown Template.
+      
+      Input Content:
+      ${content}
+
+      Target Template:
+      ${template}
+
+      Instructions:
+      1. Preserve ALL informational warnings, ID, Status, and core technical details from the Input.
+      2. Move information into the correct sections of the Template.
+      3. If the Input is missing a section required by the Template, put "N/A" or leave empty if appropriate, but do NOT remove the section header.
+      4. Do NOT hallucinate new technical facts.
+      5. Output ONLY the valid Markdown.
+      `;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().replace(/```markdown/g, "").replace(/```/g, "").trim();
+    } catch (error) {
+      console.error("Error formatting content:", error);
+      return content; // Fail safe by returning original
+    }
+  }
+
   async generateSuggestions(diff: string, currentContext: string): Promise<any> {
 
     // Load Template if it exists
