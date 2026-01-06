@@ -1,25 +1,28 @@
 #!/bin/sh
 
 # .kontext/actions/pre-commit
-# Checks for 'drift' (changes in package.json without changes in architecture/decisions)
-# And prompts for capture using agentic suggestions.
+# 1. suggest: Ensures intent is documented (creates ADRs).
+# 2. sync: Ensures IDE rules (.cursorrules) are updated with that intent.
 
-# If not interactive, we can't do much (skipping)
+# If not interactive, skip interactive suggestion but still try to sync if possible?
+# syncing is safe to run always.
+
 if [ ! -t 1 ]; then
-    exit 0
+    echo "🔍 [Kontext] Non-interactive mode. Skipping Suggest."
+else
+    echo "🔍 [Kontext] Checking environment..."
+    echo "🤖 [Kontext Agent] Waking up..."
+    # 1. Run Suggestion Engine
+    npm run --silent dev -- suggest < /dev/tty > /dev/tty || true
 fi
 
-echo "🔍 [Kontext] Checking environment..."
+# 2. Run Sync (Broadcaster)
+# This updates .cursorrules based on whatever state exists now (including new ADRs)
+echo "📡 [Kontext Broadcaster] Syncing context to IDE rules..."
+npm run --silent dev -- sync || true
 
-# Check if GEMINI_API_KEY is available (only if we want to run the agent)
-# For now, let's just try running the command. If it fails (no key), it likely handles it gracefully.
-
-# We use 'npm run dev' to execute the local kontext CLI
-# In production content, this would be 'kontext suggest'
-echo "🤖 [Kontext Agent] Waking up..."
-
-# Using --silent to suppress npm noise
-# Passing stdin to allow inquirer interaction
-npm run --silent dev -- suggest < /dev/tty > /dev/tty || true
+# 3. Add any changes made by Sync to the commit
+# Sync modifies .cursorrules. If we don't stage it, it won't be in this commit.
+git add .cursorrules .windsurfrules 2>/dev/null || true
 
 exit 0

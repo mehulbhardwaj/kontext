@@ -3,6 +3,7 @@ import { registerInit } from './commands/init';
 import { registerRemember } from './commands/remember';
 import { registerValidate } from './commands/validate';
 import { suggestCommand } from './commands/suggest';
+import { registerSync } from './commands/sync';
 
 const appPackage = require('../package.json');
 
@@ -16,6 +17,7 @@ program
 registerInit(program);
 registerRemember(program);
 registerValidate(program);
+registerSync(program);
 program.addCommand(suggestCommand);
 
 program.parse(process.argv);
