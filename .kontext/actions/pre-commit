@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# .kontext/actions/pre-commit
+# Checks for 'drift' (changes in package.json without changes in architecture/decisions)
+# And prompts for capture using agentic suggestions.
+
+# If not interactive, we can't do much (skipping)
+if [ ! -t 1 ]; then
+    exit 0
+fi
+
+echo "🔍 [Kontext] Checking environment..."
+
+# Check if GEMINI_API_KEY is available (only if we want to run the agent)
+# For now, let's just try running the command. If it fails (no key), it likely handles it gracefully.
+
+# We use 'npm run dev' to execute the local kontext CLI
+# In production content, this would be 'kontext suggest'
+echo "🤖 [Kontext Agent] Waking up..."
+
+# Using --silent to suppress npm noise
+# Passing stdin to allow inquirer interaction
+npm run --silent dev -- suggest < /dev/tty > /dev/tty || true
+
+exit 0
