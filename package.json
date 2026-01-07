@@ -1,5 +1,5 @@
 {
-  "name": "kontext-state",
+  "name": "kontext",
   "version": "0.1.0",
   "description": "A canonical, versioned, structured representation of project truth inside the repository.",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
     "ai",
     "context"
   ],
-  "author": "Kontext State",
+  "author": "Kontext",
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

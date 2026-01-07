@@ -14,9 +14,9 @@ import {
 export const registerInit = (program: Command) => {
     program
         .command('init')
-        .description('Initialize kontext state in the current repository')
+        .description('Initialize kontext memory in the current repository')
         .action(async () => {
-            console.log(chalk.blue('Initializing Kontext State...'));
+            console.log(chalk.blue('Initializing Kontext...'));
 
             const cwd = process.cwd();
             const projectPackageJson = path.join(cwd, 'package.json');
@@ -69,8 +69,8 @@ export const registerInit = (program: Command) => {
                 // Context Bridge
                 await handleContextBridge(cwd);
 
-                console.log(chalk.bold.green('\n✅ Kontext State initialized.'));
-                console.log(`👉 Run ${chalk.cyan('kontext remember "We are using Next.js"')} to create your first decision.`);
+                console.log(chalk.bold.green('\n✅ Kontext initialized.'));
+                console.log(`👉 Run ${chalk.cyan('kontext suggest')} to analyze your code.`);
 
             } catch (error: any) {
                 console.error(chalk.red('Failed to initialize:'), error.message);
@@ -101,8 +101,8 @@ async function handleContextBridge(cwd: string) {
     ]);
 
     if (addToContext) {
-        const instructionBlock = `\n\n# Kontext State
-This project uses Kontext State for architectural decisions.
+        const instructionBlock = `\n\n# Kontext Memory
+This project uses Kontext for architectural decisions.
 - Read .kontext/index.md for context.
 - Check .kontext/decisions/ for history.
 `;

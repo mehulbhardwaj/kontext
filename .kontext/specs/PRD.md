@@ -1,4 +1,4 @@
-# Kontext State — Product Requirements Document (Final Draft)
+# Kontext — Product Requirements Document (Final Draft)
 
 ## 0. Executive Summary
 Software is increasingly written by humans + AI agents working together.
@@ -11,7 +11,7 @@ But both are operating blind because:
 - onboarding becomes painful
 
 There is no canonical, structured, version-controlled truth layer inside the codebase.
-**Kontext State** introduces that layer.
+**Kontext** introduces that layer.
 
 It is:
 - repo-native
@@ -23,7 +23,7 @@ It is:
 - reviewed alongside code
 - intentionally boring, stable, and trustworthy
 
-Kontext State creates the “project brain” — grounded in Git — that AI agents and humans can share.
+Kontext creates the “project brain” — grounded in Git — that AI agents and humans can share.
 This is a primitive, not a feature.
 
 ## 1. Mission & Philosophy
@@ -111,7 +111,7 @@ Humans read everything.
 State becomes a first-class citizen.
 
 ## 5. Open Source Strategy
-Kontext State must be open source.
+Kontext must be open source.
 Because this is:
 - a standard
 - an infrastructure layer
@@ -276,7 +276,7 @@ PR includes:
 GitHub Action runs:
 `kontext validate`
 Result:
-✅ Kontext State Valid
+✅ Kontext Valid
 
 *Review Layer*
 Reviewer opens Files Changed:
@@ -314,18 +314,29 @@ They are reviewing architecture, not just code.
 - → PR comments reference Kontext files
 - → Removing it would feel like losing guardrails
 
-## 9. Future (Post-MVP, Not Required Now)
-Later, carefully:
-- AI-generated suggestions (human-approved)
-- multi-repo mapping
-- auto-derived structural facts
-- dashboards
-- org governance
-- policy layers
-- onboarding bots
-- architecture visualization
+## 9. The Agent Squad (Architecture)
 
-But only once the primitive wins.
+### 1. The Scribe (`kontext suggest`)
+- **Status:** Active
+- **Role:** Input / Creative.
+- **Job:** Watches code diffs. Drafts *new* ADRs.
+
+### 2. The Broadcaster (`kontext sync`)
+- **Status:** Active
+- **Role:** Context Bridge.
+- **Job:** Updates `.cursorrules` with minimal pointers to truth.
+
+### 3. The Structurer (`kontext format`)
+- **Status:** Active
+- **Role:** Compliance / Librarian.
+- **Job:** Rewrites content to match `.kontext/templates/`.
+
+### 4. The Pruner (`kontext distill`)
+- **Status:** Active
+- **Role:** Garbage Collector / Historian.
+- **Job:** Merges duplicates with human approval.
+
+
 
 ## 10. What Success Ultimately Looks Like
 People say:
@@ -341,7 +352,7 @@ Standards emerge around it.
 This becomes normal.
 
 ## 🎯 Final Statement of Intent
-Kontext State is the missing “project brain” in the age of AI-assisted development.
+Kontext is the missing “project brain” in the age of AI-assisted development.
 It is structured, governed, diffable truth — versioned in Git — shared between humans and agents.
 
 Start small. Make it useful. Become infrastructure.

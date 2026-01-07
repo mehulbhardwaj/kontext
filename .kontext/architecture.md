@@ -4,7 +4,6 @@
 Kontext is a CLI tool designed to maintain a 'Context Nerve' within a repository. It operates on the principle that architectural intent should be versioned alongside code.
 
 ## Components
-
 ### 1. The State Store (`.kontext/`)
 - **index.md**: The entry point and summary of project truth.
 - **decisions/**: A directory of ADRs (Architectural Decision Records) following the `adr-XXX-slug.md` format.

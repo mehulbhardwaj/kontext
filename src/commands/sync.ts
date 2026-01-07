@@ -10,47 +10,51 @@ const KONTEXT_BLOCK_END = "<!-- KONTEXT_END -->";
 export const registerSync = (program: Command) => {
     program
         .command('sync')
-        .description('Broadcasts the current Kontext state to IDE rules (.cursorrules, etc)')
+        .description('Broadcasts the current Kontext memory to IDE rules (.cursorrules, etc)')
         .action(async () => {
-            console.log(chalk.blue('🔁 Broadcasting Context to IDE...'));
-            const cwd = process.cwd();
-            const kontextDir = path.join(cwd, '.kontext');
-
-            if (!fs.existsSync(kontextDir)) {
-                console.log(chalk.red('❌ .kontext directory not found. Run "kontext init" first.'));
-                return;
-            }
-
-            // 1. Gather Context
-            const contextSummary = await gatherContext(kontextDir);
-
-            // 2. Format the Block
-            const block = formatBlock(contextSummary);
-
-            // 3. Inject into Rules
-            const ruleFiles = ['.cursorrules', '.windsurfrules'];
-            let updatedCount = 0;
-
-            for (const file of ruleFiles) {
-                const filePath = path.join(cwd, file);
-                if (fs.existsSync(filePath)) {
-                    await updateRuleFile(filePath, block);
-                    console.log(chalk.green(`✅ Updated ${file}`));
-                    updatedCount++;
-                }
-            }
-
-            if (updatedCount === 0) {
-                console.log(chalk.yellow('⚠️  No IDE rule files found (.cursorrules, .windsurfrules).'));
-            }
+            await runSync();
         });
 };
+
+export async function runSync() {
+    console.log(chalk.blue('🔁 Broadcasting Context to IDE...'));
+    const cwd = process.cwd();
+    const kontextDir = path.join(cwd, '.kontext');
+
+    if (!fs.existsSync(kontextDir)) {
+        console.log(chalk.red('❌ .kontext directory not found. Run "kontext init" first.'));
+        return;
+    }
+
+    // 1. Gather Context
+    const contextSummary = await gatherContext(kontextDir);
+
+    // 2. Format the Block
+    const block = formatBlock(contextSummary);
+
+    // 3. Inject into Rules
+    const ruleFiles = ['.cursorrules', '.windsurfrules'];
+    let updatedCount = 0;
+
+    for (const file of ruleFiles) {
+        const filePath = path.join(cwd, file);
+        if (fs.existsSync(filePath)) {
+            await updateRuleFile(filePath, block);
+            console.log(chalk.green(`✅ Updated ${file}`));
+            updatedCount++;
+        }
+    }
+
+    if (updatedCount === 0) {
+        console.log(chalk.yellow('⚠️  No IDE rule files found (.cursorrules, .windsurfrules).'));
+    }
+}
 
 async function gatherContext(kontextDir: string): Promise<string> {
     // Minimal Bridge Strategy:
     // Don't dump the whole context. Just point the AI to the source of truth.
-    return `## Kontext State Active
-This project uses Kontext State for architectural decisions.
+    return `## Kontext Memory Active
+This project uses Kontext for architectural decisions.
 
 - **Truth Source**: Read \`.kontext/index.md\` and following links.
 - **Constraints**: Check \`.kontext/constraints.md\` before coding.

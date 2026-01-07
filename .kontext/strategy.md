@@ -58,15 +58,19 @@ If `kontext remember` feels like "writing docs," it will fail.
 ## 4. Immediate "Next Moves" for Engineering
 To hit that "Nerve" hard:
 
-1.  **Commit-Time Actions (Active):**
-    - Implement `.kontext/actions/pre-commit` to detect drift (e.g., `package.json` changed but no ADR).
-    - Reduce friction by prompting *at the moment of action*.
-2.  **Context Bridge 2.0 (Auto-Sync):**
-    - Don't just append to `.cursorrules` once.
-    - Make `kontext` *own* a section of `.cursorrules`. When `architecture.md` changes, `kontext sync` updates the rules automatically.
-3.  **"Suggestion" Mode:**
-    - Use LLM to *read* the git diff and *suggest* the ADR text.
-    - `kontext suggest` -> "It looks like you added Redis. Want to create an ADR for 'Adding Caching Layer'?" -> User types "Y". **(Magic Moment)**.
+1.  **Commit-Time Actions (Active):** (Done)
+    - `kontext suggest` captures the "Why" at the moment of creation.
+2.  **The Gardening Loop (Structure & Prune):** (Done)
+    - **Structure**: `kontext format` enforces the template schema agentically.
+    - **Prune**: `kontext distill` creates safe merge proposals for duplicates.
+3.  **Minimal Bridge:** (Done)
+    - `kontext sync` keeps `.cursorrules` lightweight, pointing to the Truth.
+
+## 5. Next Horizon (Post-PMF)
+Now that the "Primitive" is strong and self-healing:
+1.  **GitHub Action:** Move the "Guard" to CI to block PRs that break architecture.
+2.  **Visual Graph:** Render the `.kontext/decisions` folder as a mermaid graph.
+
 
 ## 5. Risks / Known Problems in this Area
 - **"Another Tool" Fatigue:** Developers hate installing new CLI tools.

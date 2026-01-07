@@ -8,7 +8,7 @@ import { IndexSchema, DecisionSchema } from '../lib/schemas';
 export const registerValidate = (program: Command) => {
     program
         .command('validate')
-        .description('Validate the integrity of kontext state')
+        .description('Validate the integrity of kontext')
         .action(async () => {
             try {
                 const cwd = process.cwd();

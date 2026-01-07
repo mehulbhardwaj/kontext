@@ -13,7 +13,7 @@ const program = new Command();
 
 program
     .name('kontext')
-    .description('Manage project context state')
+    .description('Project Memory Primitive')
     .version(appPackage.version);
 
 registerInit(program);
