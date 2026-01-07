@@ -1,14 +1,15 @@
 #!/bin/sh
 
+# 🌐 Ensure common Node.js paths are in PATH (Fixes "npx not found" in Git hooks)
+export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
 # 🛡️ Generic Identity Protection
-# Check if the project has a local block pattern set
 BLOCK_PATTERN=$(git config kontext.identity.blockPattern)
 
 if [ ! -z "$BLOCK_PATTERN" ]; then
     CURRENT_EMAIL=$(git config user.email)
     CURRENT_USER=$(git config user.name)
 
-    # Check email against pattern
     if echo "$CURRENT_EMAIL" | grep -Eq "$BLOCK_PATTERN"; then
         echo "❌ ERROR: Commit blocked by identity guard."
         echo "Current identity: $CURRENT_USER <$CURRENT_EMAIL>"
