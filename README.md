@@ -16,31 +16,50 @@ npm link
 ```
 
 ### 2. Configuration
-Kontext uses Gemini 2.0 (specifically `gemini-2.0-flash-exp`) for its reasoning engine. You must provide an API key:
+Kontext uses Gemini for its reasoning engine. You must provide an API key:
 ```bash
 export GEMINI_API_KEY=your_key_here
 ```
 
-### 3. Zero-Config Start
-```bash
-kontext init
-```
-This scaffolds the `.kontext/` directory and optionally appends instructions to your IDE rule files (`.cursorrules`, `.windsurfrules`).
+### 3. Usage
+#### Core Commands (The Humans)
+These commands are stable and ready for daily use.
 
-### 3. The Agentic Loop
-The core of Kontext is the **Agentic Loop**, which orchestrates multiple agents to maintain your context window:
-- **Scribe** (`kontext suggest`): Active on `git commit`. Analyzes diffs and drafts **Architectural Decision Records (ADRs)**.
-- **Structurer** (`kontext format`): Enforces a strict schema (defined in `.kontext/templates/`) on all your docs.
-- **Pruner** (`kontext distill`): Identifies and merges duplicate or obsolete contexts.
-- **Broadcaster** (`kontext sync`): Injects minimal pointers into your IDE rules so your AI always knows where to find the "Truth".
+- **Initialize**: Scaffold the `.kontext` directory.
+  ```bash
+  kontext init
+  ```
+- **Remember**: Manually record a decision.
+  ```bash
+  # Creates .kontext/decisions/adr-00X-use-redis.md
+  kontext remember "Use Redis for Caching"
+  ```
+- **Validate**: Check the integrity of your decision log (useful for CI).
+  ```bash
+  # Verifies schema compliance and ID matching
+  kontext validate
+  ```
 
-### 4. Example Use
-Just code as usual. When you commit, the Scribe wakes up:
-```bash
-git add .
-git commit -m "feat: switch to redis for caching"
-# 🤖 [Kontext Agent] Drafting ADR-001: Introduce Redis...
-```
+#### The Agent Squad (The Bots)
+The core of Kontext is the **Agentic Loop**. These agents typically run automatically via `pre-commit` hooks, but you can run them manually:
+
+- **Scribe** (`kontext suggest`): Analyzes your staged code diff and drafts an ADR.
+  ```bash
+  # Requires GEMINI_API_KEY
+  kontext suggest
+  ```
+- **Structurer** (`kontext format`): Enforces a strict schema on all docs.
+  ```bash
+  kontext format
+  ```
+- **Pruner** (`kontext distill`): Identifies and merges duplicate contexts (interactive).
+  ```bash
+  kontext distill
+  ```
+- **Broadcaster** (`kontext sync`): Injects minimal pointers into `.cursorrules` / `.windsurfrules`.
+  ```bash
+  kontext sync
+  ```
 
 ---
 
