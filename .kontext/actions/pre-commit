@@ -1,28 +1,41 @@
 #!/bin/sh
 
-# .kontext/actions/pre-commit
-# 1. suggest: Ensures intent is documented (creates ADRs).
-# 2. sync: Ensures IDE rules (.cursorrules) are updated with that intent.
+# 🛡️ Generic Identity Protection
+# Check if the project has a local block pattern set
+BLOCK_PATTERN=$(git config kontext.identity.blockPattern)
 
-# If not interactive, skip interactive suggestion but still try to sync if possible?
-# syncing is safe to run always.
+if [ ! -z "$BLOCK_PATTERN" ]; then
+    CURRENT_EMAIL=$(git config user.email)
+    CURRENT_USER=$(git config user.name)
 
+    # Check email against pattern
+    if echo "$CURRENT_EMAIL" | grep -Eq "$BLOCK_PATTERN"; then
+        echo "❌ ERROR: Commit blocked by identity guard."
+        echo "Current identity: $CURRENT_USER <$CURRENT_EMAIL>"
+        echo "Reason: Matches local block pattern: '$BLOCK_PATTERN'"
+        echo ""
+        echo "💡 To fix this, switch to your personal identity for this repo:"
+        echo "   git config --local user.email \"your-personal-email@example.com\""
+        echo "   git config --local user.name \"Your Name\""
+        exit 1
+    fi
+fi
+
+# 🤖 Agentic Maintenance Loop
 if [ ! -t 1 ]; then
     echo "🔍 [Kontext] Non-interactive mode. Skipping Suggest."
 else
     echo "🔍 [Kontext] Checking environment..."
     echo "🤖 [Kontext Agent] Waking up..."
-    # 1. Run Suggestion Engine
-    npm run --silent dev -- suggest < /dev/tty > /dev/tty || true
+    # Run Suggestion Engine
+    npx ts-node src/index.ts suggest < /dev/tty > /dev/tty || true
 fi
 
-# 2. Run Sync (Broadcaster)
-# This updates .cursorrules based on whatever state exists now (including new ADRs)
+# Run Sync (Broadcaster)
 echo "📡 [Kontext Broadcaster] Syncing context to IDE rules..."
-npm run --silent dev -- sync || true
+npx ts-node src/index.ts sync || true
 
-# 3. Add any changes made by Sync to the commit
-# Sync modifies .cursorrules. If we don't stage it, it won't be in this commit.
+# Add changes to the commit
 git add .cursorrules .windsurfrules 2>/dev/null || true
 
 exit 0
