@@ -16,12 +16,17 @@ program
     .description('Project Memory Primitive')
     .version(appPackage.version);
 
+import { registerCheck } from './commands/check';
+
+// ... imports ...
+
 registerInit(program);
 registerRemember(program);
 registerValidate(program);
 registerSync(program);
 registerFormat(program);
 registerDistill(program);
+registerCheck(program); // Added
 program.addCommand(suggestCommand);
 
 program.parse(process.argv);

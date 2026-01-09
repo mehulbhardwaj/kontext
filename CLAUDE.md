@@ -1,32 +1,3 @@
-# Original Cursor Rules
-Always use strict types.
-
-
-# Kontext State
-This project uses Kontext State for architectural decisions.
-- Read .kontext/index.md for context.
-- Check .kontext/decisions/ for history.
-
-
-# Kontext State
-This project uses Kontext State for architectural decisions.
-- Read .kontext/index.md for context.
-- Check .kontext/decisions/ for history.
-
-
-<!-- KONTEXT_START -->
-## Kontext State Active
-This project uses Kontext State for architectural decisions.
-
-- **Truth Source**: Read `.kontext/index.md` and following links.
-- **Constraints**: Check `.kontext/constraints.md` before coding.
-- **Decision History**: See `.kontext/decisions/` for ADRs.
-
-🤖 **Agent Instructions**:
-1. If you make a significant architectural choice, ask the user to run `kontext suggest`.
-2. Do not invent patterns that conflict with `.kontext/architecture.md`.
-
-<!-- KONTEXT_END -->
 
 <!-- KONTEXT_BLOCK_START -->
 # 🧠 Kontext Memory (Auto-Generated)

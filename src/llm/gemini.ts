@@ -35,7 +35,12 @@ export class GeminiClient {
     {
         "hasMerge": boolean,
         "rationale": "Why these files should be merged.",
-        "filesToDelete": ["path/to/duplicate1.md", "path/to/duplicate2.md"],
+        "filesToSupersede": [
+          {
+            "path": "path/to/duplicate1.md",
+            "summary": "A one-sentence summary of the original decision (e.g. 'Decided to use Redis for caching.')"
+          }
+        ],
         "mergedFile": {
             "path": "path/to/canonical_adr.md",
             "content": "The full markdown content of the merged ADR..."
@@ -150,6 +155,47 @@ export class GeminiClient {
     } catch (error) {
       console.error("Error generating suggestions:", error);
       return { hasDecision: false, error: "Failed to generate suggestions" };
+    }
+  }
+  async auditChange(diff: string, context: string): Promise<{ approved: boolean; violation?: string; citation?: string }> {
+    const prompt = `
+      You are the Gatekeeper of this software project.
+      Your goal is to AUDIT the provided git "Diff" against the Project "Context" (Architecture, Constraints, ADRs).
+      
+      Instructions:
+      1. Analyze the Diff to understand WHAT is changing.
+      2. Analyze the Context to understand the RULES.
+      3. Look for semantic violations (e.g., using a library that is forbidden, ignoring an architectural pattern).
+      4. IGNORE trivial changes (formatting, typos, comments) unless they violate a specific constraint.
+      5. Strict FAIL if a clear violation is found.
+
+      Diff:
+      ${diff}
+
+      Context:
+      ${context}
+
+      Format:
+      {
+          "approved": boolean,
+          "violation": "Explanation of the violation (if any).",
+          "citation": "ID of the ADR or Constraint file that was violated (e.g. adr-001, constraints.md)"
+      }
+
+      Respond ONLY with the JSON.
+    `;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+      return JSON.parse(text);
+    } catch (error) {
+      console.error("Error auditing change:", error);
+      // Fail open or fail closed? 
+      // Safe guard: if AI fails, warn but allow? Or block?
+      // Let's block to be safe, but with a specific error message.
+      return { approved: false, violation: "AI Verification Failed (API Error)" };
     }
   }
 }

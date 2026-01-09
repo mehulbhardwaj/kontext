@@ -2,22 +2,23 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs-extra';
-import { safeWriteFile } from '../lib/fs';
+import { getContext, filterDecisions, formatContextBlock } from '../lib/context';
 
-const KONTEXT_BLOCK_START = "<!-- KONTEXT_START -->";
-const KONTEXT_BLOCK_END = "<!-- KONTEXT_END -->";
+const KONTEXT_BLOCK_START = "<!-- KONTEXT_BLOCK_START -->";
+const KONTEXT_BLOCK_END = "<!-- KONTEXT_BLOCK_END -->";
 
 export const registerSync = (program: Command) => {
     program
         .command('sync')
-        .description('Broadcasts the current Kontext memory to IDE rules (.cursorrules, etc)')
-        .action(async () => {
-            await runSync();
+        .description('Broadcasts the current Kontext memory to IDE rules (.cursorrules, CLAUDE.md)')
+        .option('-f, --focus <tag>', 'Only sync ADRs related to a specific tag (e.g. frontend)')
+        .action(async (options) => {
+            await runSync(options.focus);
         });
 };
 
-export async function runSync() {
-    console.log(chalk.blue('🔁 Broadcasting Context to IDE...'));
+export async function runSync(focus?: string) {
+    console.log(chalk.blue('🔁 Broadcaster: Compiling Context...'));
     const cwd = process.cwd();
     const kontextDir = path.join(cwd, '.kontext');
 
@@ -27,76 +28,73 @@ export async function runSync() {
     }
 
     // 1. Gather Context
-    const contextSummary = await gatherContext(kontextDir);
+    const rawContext = await getContext(kontextDir);
+    const totalADRs = rawContext.decisions.length;
 
-    // 2. Format the Block
-    const block = formatBlock(contextSummary);
+    // 2. Filter (Prune)
+    const filteredDecisions = filterDecisions(rawContext.decisions, focus);
 
-    // 3. Inject into Rules
-    const ruleFiles = ['.cursorrules', '.windsurfrules'];
+    if (filteredDecisions.length === 0) {
+        console.log(chalk.yellow(`⚠️  No active decisions found${focus ? ` for tag '${focus}'` : ''}. Nothing to sync.`));
+        return;
+    }
+
+    console.log(chalk.dim(`   Compiling ${filteredDecisions.length}/${totalADRs} ADRs...`));
+
+    // 3. Format the Block (Compile)
+    const contextContent = formatContextBlock(filteredDecisions);
+    const block = `
+${KONTEXT_BLOCK_START}
+# 🧠 Kontext Memory (Auto-Generated)
+# Do not edit this block manually. Run "npx kontext sync" to update.
+# Source of Truth: .kontext/
+
+${contextContent}
+
+# 🤖 Agent Instructions:
+# 1. Respect the constraints in the table above.
+# 2. If you propose changes that conflict with an Accepted ADR, you MUST ask the user.
+# 3. New architectural choices? Run "npx kontext suggest".
+${KONTEXT_BLOCK_END}
+`;
+
+    // 4. Inject into Rules
+    // Target Files: .cursorrules, .windsurfrules, CLAUDE.md
+    const ruleFiles = ['.cursorrules', '.windsurfrules', 'CLAUDE.md'];
     let updatedCount = 0;
 
     for (const file of ruleFiles) {
         const filePath = path.join(cwd, file);
+
+        // Strategy: Only update if file ALREADY exists.
+        // We do not want to pollute projects that don't use these tools.
         if (fs.existsSync(filePath)) {
             await updateRuleFile(filePath, block);
             console.log(chalk.green(`✅ Updated ${file}`));
             updatedCount++;
         }
     }
-
-    if (updatedCount === 0) {
-        console.log(chalk.yellow('⚠️  No IDE rule files found (.cursorrules, .windsurfrules).'));
-    }
-}
-
-async function gatherContext(kontextDir: string): Promise<string> {
-    // Minimal Bridge Strategy:
-    // Don't dump the whole context. Just point the AI to the source of truth.
-    return `## Kontext Memory Active
-This project uses Kontext for architectural decisions.
-
-- **Truth Source**: Read \`.kontext/index.md\` and following links.
-- **Constraints**: Check \`.kontext/constraints.md\` before coding.
-- **Decision History**: See \`.kontext/decisions/\` for ADRs.
-
-🤖 **Agent Instructions**:
-1. If you make a significant architectural choice, ask the user to run \`kontext suggest\`.
-2. Do not invent patterns that conflict with \`.kontext/architecture.md\`.
-`;
-}
-
-function cleanMarkdown(content: string): string {
-    // Remove YAML frontmatter if present
-    if (content.startsWith('---')) {
-        const parts = content.split('---');
-        if (parts.length >= 3) {
-            return parts.slice(2).join('---').trim();
-        }
-    }
-    return content.trim();
-}
-
-function formatBlock(content: string): string {
-    return `${KONTEXT_BLOCK_START}\n${content}\n${KONTEXT_BLOCK_END}`;
 }
 
 async function updateRuleFile(filePath: string, newBlock: string) {
     let content = await fs.readFile(filePath, 'utf-8');
+    const escapedStart = escapeRegExp(KONTEXT_BLOCK_START);
+    const escapedEnd = escapeRegExp(KONTEXT_BLOCK_END);
 
-    const regex = new RegExp(`${escapeRegExp(KONTEXT_BLOCK_START)}[\\s\\S]*?${escapeRegExp(KONTEXT_BLOCK_END)}`, 'g');
+    // Regex to find existing block (multiline)
+    const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'g');
 
     if (regex.test(content)) {
         // Replace existing block
-        content = content.replace(regex, newBlock);
+        content = content.replace(regex, newBlock.trim());
     } else {
         // Append new block
-        content += `\n\n${newBlock}`;
+        content += `\n\n${newBlock.trim()}`;
     }
 
     await fs.writeFile(filePath, content, 'utf-8');
 }
 
 function escapeRegExp(string: string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Ensure GEMINI_API_KEY is available in your shell env!
+
+echo "🛡️  Running Kontext Check..."
+npx ts-node src/index.ts check || exit 1

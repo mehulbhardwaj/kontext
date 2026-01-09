@@ -10,12 +10,13 @@ export const registerDistill = (program: Command) => {
     program
         .command('distill')
         .description('Prunes duplicate or obsolete contexts into canonical decisions')
-        .action(async () => {
-            await runDistill(false);
+        .option('-y, --yes', 'Automatically approve merges without prompting')
+        .action(async (options) => {
+            await runDistill(false, options.yes);
         });
 };
 
-export async function runDistill(quiet: boolean = false) {
+export async function runDistill(quiet: boolean = false, autoApprove: boolean = false) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         console.log(chalk.red("❌ GEMINI_API_KEY required for agentic distillation."));
@@ -69,35 +70,75 @@ export async function runDistill(quiet: boolean = false) {
 
     console.log(chalk.magenta(`\n💡 Proposed Merge: ${plan.rationale}`));
 
-    console.log(chalk.red("\n🗑  DELETE:"));
-    plan.filesToDelete.forEach((f: string) => console.log(`   - ${path.relative(cwd, f)}`));
+    console.log(chalk.yellow("\n🪦  SUPERSEDE (Tombstone):"));
+    plan.filesToSupersede.forEach((item: any) => console.log(`   - ${path.relative(cwd, item.path)}`));
 
     console.log(chalk.cyan("\n📄 CREATE/UPDATE Canonical File:"));
     console.log(`   - ${path.relative(cwd, plan.mergedFile.path)}`);
 
     // 4. Human Approval
-    const { confirm } = await inquirer.prompt([
-        {
-            type: 'confirm',
-            name: 'confirm',
-            message: '⚠️  Do you approve this destructive merge? (Git history will be preserved)',
-            default: false
-        }
-    ]);
+    let confirm = autoApprove;
+    if (!confirm) {
+        const answer = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'confirm',
+                message: '⚠️  Do you approve this merge? (Old files will be tombstoned)',
+                default: false
+            }
+        ]);
+        confirm = answer.confirm;
+    }
 
     if (confirm) {
         // 5. Execute
         // A. Write new file
         const destPath = path.resolve(cwd, plan.mergedFile.path);
-        await overwriteFile(destPath, plan.mergedFile.content);
-        console.log(chalk.green(`\nWrote ${path.relative(cwd, destPath)}`));
 
-        // B. Delete old files
-        for (const fileToDelete of plan.filesToDelete) {
-            const absPathToDelete = path.resolve(cwd, fileToDelete);
-            if (absPathToDelete !== destPath) {
-                fs.unlinkSync(absPathToDelete);
-                console.log(chalk.red(`Deleted ${path.relative(cwd, absPathToDelete)}`));
+        // Ensure directory exists
+        await fs.ensureDir(path.dirname(destPath));
+
+        await overwriteFile(destPath, plan.mergedFile.content);
+        console.log(chalk.green(`\nWrote Canonical ADR: ${path.relative(cwd, destPath)}`));
+
+        // Get the ID of the new ADR for linking
+        // Naive extraction or just derive from filename
+        const newIdMatch = plan.mergedFile.content.match(/id:\s*(.*)/);
+        const newId = newIdMatch ? newIdMatch[1].trim() : path.basename(destPath, '.md');
+
+        // B. Tombstone old files
+        for (const item of plan.filesToSupersede) {
+            const absPathToSupersede = path.resolve(cwd, item.path);
+
+            if (absPathToSupersede !== destPath) {
+                // Read original to keep tags/date correctness? 
+                // Actually the prompt says Summary is enough.
+                // Let's create the Tombstone Content
+
+                // We need to parse the original frontmatter to preserve ID!
+                // If we overwrite blindly we lose the ID that others reference.
+                let originalId = "unknown";
+                try {
+                    const originalContent = fs.readFileSync(absPathToSupersede, 'utf-8');
+                    const match = originalContent.match(/id:\s*(.*)/);
+                    if (match) originalId = match[1].trim();
+                } catch (e) { }
+
+                const tombstoneContent = `---
+id: ${originalId}
+status: superseded
+superseded_by: ${newId}
+date: ${new Date().toISOString().split('T')[0]} 
+---
+# [Superseded] ${originalId}
+
+> ⚠️ **This ADR is superseded by [${newId}](./${path.basename(destPath)}).**
+
+**Original Decision Summary:**
+${item.summary}
+`;
+                await overwriteFile(absPathToSupersede, tombstoneContent);
+                console.log(chalk.dim(`   🪦  Tombstoned ${path.relative(cwd, absPathToSupersede)}`));
             }
         }
 
